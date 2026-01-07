@@ -56,7 +56,7 @@
 - Quick navigation cards
 
 ### 📋 **Trade Management**
-- Create & manage trades
+- Create &amp; manage trades
 - Alphanumeric trade numbers (T001, 2024-W1)
 - Active/Inactive status toggle
 - Automatic single active trade enforcement
@@ -231,7 +231,7 @@ CREATE TABLE submissions (
 
 | Dashboard | Trades | Submissions |
 |:---------:|:------:|:-----------:|
-| 📊 Overview with stats | 📋 Manage trades | 📦 View & export |
+| 📊 Overview with stats | 📋 Manage trades | 📦 View &amp; export |
 
 | Dropdowns | Pooling | Weekly Reset |
 |:---------:|:-------:|:------------:|

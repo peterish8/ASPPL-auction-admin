@@ -44,26 +44,30 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
   const [selectedItem, setSelectedItem] = useState<PoolingSchedule | null>(null)
   const [loading, setLoading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editData, setEditData] = useState({ location: '', date: '' })
-  const [newItem, setNewItem] = useState({ location: '', date: '', trade_id: '' })
+  const [editData, setEditData] = useState({ location: '', pooling_date: '' })
+  const [newItem, setNewItem] = useState({ location: '', pooling_date: '', trade_id: '' })
   const [showAddRow, setShowAddRow] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  const activeTrade = trades.find(t => t.status === 'active')
+  const activeTrade = trades.find(t => t.is_active)
 
   const refreshSchedule = async () => {
     const { data } = await supabase
       .from('pooling_schedule')
       .select('*')
-      .order('date', { ascending: true })
+      .order('pooling_date', { ascending: true })
     if (data) setSchedule(data)
     router.refresh()
   }
 
   const handleAdd = async () => {
-    if (!newItem.location || !newItem.date) {
+    if (!newItem.location || !newItem.pooling_date) {
       toast.error('Please fill in all fields')
+      return
+    }
+    if (!activeTrade && !newItem.trade_id) {
+      toast.error('No active trade found. Please select a trade.')
       return
     }
     setLoading(true)
@@ -73,13 +77,13 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
         .from('pooling_schedule')
         .insert({
           location: newItem.location,
-          date: newItem.date,
-          trade_id: newItem.trade_id || activeTrade?.id || null,
+          pooling_date: newItem.pooling_date,
+          trade_id: newItem.trade_id || activeTrade?.id,
         })
 
       if (error) throw error
       toast.success('Location added successfully')
-      setNewItem({ location: '', date: '', trade_id: '' })
+      setNewItem({ location: '', pooling_date: '', trade_id: '' })
       setShowAddRow(false)
       refreshSchedule()
     } catch (error) {
@@ -93,17 +97,17 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
     setEditingId(item.id)
     setEditData({ 
       location: item.location, 
-      date: formatDateForInput(item.date) 
+      pooling_date: formatDateForInput(item.pooling_date) 
     })
   }
 
   const cancelEdit = () => {
     setEditingId(null)
-    setEditData({ location: '', date: '' })
+    setEditData({ location: '', pooling_date: '' })
   }
 
   const saveEdit = async (id: string) => {
-    if (!editData.location || !editData.date) {
+    if (!editData.location || !editData.pooling_date) {
       toast.error('Please fill in all fields')
       return
     }
@@ -112,7 +116,7 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
     try {
       const { error } = await supabase
         .from('pooling_schedule')
-        .update({ location: editData.location, date: editData.date })
+        .update({ location: editData.location, pooling_date: editData.pooling_date })
         .eq('id', id)
 
       if (error) throw error
@@ -194,8 +198,8 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
                 <TableCell>
                   <Input
                     type="date"
-                    value={newItem.date}
-                    onChange={(e) => setNewItem({ ...newItem, date: e.target.value })}
+                    value={newItem.pooling_date}
+                    onChange={(e) => setNewItem({ ...newItem, pooling_date: e.target.value })}
                     className="bg-zinc-800 border-zinc-700"
                   />
                 </TableCell>
@@ -212,7 +216,7 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => { setShowAddRow(false); setNewItem({ location: '', date: '', trade_id: '' }); }}
+                      onClick={() => { setShowAddRow(false); setNewItem({ location: '', pooling_date: '', trade_id: '' }); }}
                       className="hover:bg-zinc-800"
                     >
                       <X className="h-4 w-4 text-zinc-400" />
@@ -246,12 +250,12 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
                     {editingId === item.id ? (
                       <Input
                         type="date"
-                        value={editData.date}
-                        onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                        value={editData.pooling_date}
+                        onChange={(e) => setEditData({ ...editData, pooling_date: e.target.value })}
                         className="bg-zinc-800 border-zinc-700"
                       />
                     ) : (
-                      <span className="text-zinc-300">{formatDate(item.date)}</span>
+                      <span className="text-zinc-300">{formatDate(item.pooling_date)}</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">

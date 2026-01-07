@@ -7,7 +7,7 @@ export default async function DropdownsPage() {
   const { data: options } = await supabase
     .from('dropdowns')
     .select('*')
-    .order('order', { ascending: true })
+    .order('order_index', { ascending: true })
 
   return <DropdownManager initialOptions={options || []} />
 }

@@ -43,14 +43,14 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
   const supabase = createClient()
 
   const filteredOptions = options
-    .filter(opt => opt.category === activeTab)
-    .sort((a, b) => a.order - b.order)
+    .filter(opt => opt.category === activeTab && opt.is_active)
+    .sort((a, b) => a.order_index - b.order_index)
 
   const refreshOptions = async () => {
     const { data } = await supabase
       .from('dropdowns')
       .select('*')
-      .order('order', { ascending: true })
+      .order('order_index', { ascending: true })
     if (data) setOptions(data)
     router.refresh()
   }
@@ -63,13 +63,14 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
     setLoading(true)
 
     try {
-      const maxOrder = Math.max(0, ...filteredOptions.map(o => o.order))
+      const maxOrder = Math.max(0, ...filteredOptions.map(o => o.order_index))
       const { error } = await supabase
         .from('dropdowns')
         .insert({
           category: activeTab,
           label: newLabel.trim(),
-          order: maxOrder + 1,
+          order_index: maxOrder + 1,
+          is_active: true,
         })
 
       if (error) throw error
@@ -128,9 +129,10 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
     setLoading(true)
 
     try {
+      // Soft delete by setting is_active to false
       const { error } = await supabase
         .from('dropdowns')
-        .delete()
+        .update({ is_active: false })
         .eq('id', selectedOption.id)
 
       if (error) throw error
@@ -156,8 +158,8 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
 
     try {
       await Promise.all([
-        supabase.from('dropdowns').update({ order: swapOption.order }).eq('id', option.id),
-        supabase.from('dropdowns').update({ order: option.order }).eq('id', swapOption.id),
+        supabase.from('dropdowns').update({ order_index: swapOption.order_index }).eq('id', option.id),
+        supabase.from('dropdowns').update({ order_index: option.order_index }).eq('id', swapOption.id),
       ])
       refreshOptions()
     } catch (error) {

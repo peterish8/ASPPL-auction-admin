@@ -31,7 +31,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { 
-  Download, 
   FileJson, 
   Copy, 
   Search, 
@@ -39,8 +38,7 @@ import {
   RefreshCw,
   X,
   Eye,
-  FileSpreadsheet,
-  ClipboardCheck
+  FileSpreadsheet
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -61,7 +59,7 @@ export function SubmissionsViewer({
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
-    trade_id: 'all',
+    trade_number: 'all',
     depot: 'all',
     type: 'all',
   })
@@ -88,6 +86,12 @@ export function SubmissionsViewer({
     }
   }
 
+  // Get unique trade numbers from submissions
+  const uniqueTradeNumbers = useMemo(() => {
+    const numbers = [...new Set(submissions.map(s => s.trade_number))]
+    return numbers.filter(Boolean).sort()
+  }, [submissions])
+
   // Filter submissions
   const filteredSubmissions = useMemo(() => {
     return submissions.filter(sub => {
@@ -96,7 +100,7 @@ export function SubmissionsViewer({
         const query = searchQuery.toLowerCase()
         const matchesSearch = 
           sub.name.toLowerCase().includes(query) ||
-          sub.phone.toLowerCase().includes(query) ||
+          sub.phone_number.toLowerCase().includes(query) ||
           sub.details.toLowerCase().includes(query) ||
           sub.depot.toLowerCase().includes(query) ||
           sub.type.toLowerCase().includes(query)
@@ -104,7 +108,7 @@ export function SubmissionsViewer({
       }
 
       // Trade filter
-      if (filters.trade_id !== 'all' && sub.trade_id !== filters.trade_id) {
+      if (filters.trade_number !== 'all' && sub.trade_number !== filters.trade_number) {
         return false
       }
 
@@ -123,12 +127,12 @@ export function SubmissionsViewer({
   }, [submissions, searchQuery, filters])
 
   const clearFilters = () => {
-    setFilters({ trade_id: 'all', depot: 'all', type: 'all' })
+    setFilters({ trade_number: 'all', depot: 'all', type: 'all' })
     setSearchQuery('')
   }
 
   const hasActiveFilters = 
-    filters.trade_id !== 'all' || 
+    filters.trade_number !== 'all' || 
     filters.depot !== 'all' || 
     filters.type !== 'all' || 
     searchQuery !== ''
@@ -141,7 +145,7 @@ export function SubmissionsViewer({
     }
     const exportData = filteredSubmissions.map(sub => ({
       Name: sub.name,
-      Phone: sub.phone,
+      Phone: sub.phone_number,
       Details: sub.details,
       Weight: sub.weight,
       Type: sub.type,
@@ -168,7 +172,7 @@ export function SubmissionsViewer({
       return
     }
     const text = filteredSubmissions.map(sub => 
-      `${sub.name} | ${sub.phone} | ${sub.details} | ${sub.weight}kg | ${sub.type} | ${sub.depot}`
+      `${sub.name} | ${sub.phone_number} | ${sub.details} | ${sub.weight}kg | ${sub.type} | ${sub.depot}`
     ).join('\n')
     const success = await copyToClipboard(text)
     if (success) {
@@ -244,17 +248,17 @@ export function SubmissionsViewer({
 
             {/* Trade Filter */}
             <Select
-              value={filters.trade_id}
-              onValueChange={(v) => setFilters({ ...filters, trade_id: v })}
+              value={filters.trade_number}
+              onValueChange={(v) => setFilters({ ...filters, trade_number: v })}
             >
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Filter by Trade" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
                 <SelectItem value="all">All Trades</SelectItem>
-                {trades.map((trade) => (
-                  <SelectItem key={trade.id} value={trade.id}>
-                    Trade #{trade.trade_number}
+                {uniqueTradeNumbers.map((num) => (
+                  <SelectItem key={num} value={num}>
+                    Trade {num}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -270,7 +274,7 @@ export function SubmissionsViewer({
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
                 <SelectItem value="all">All Depots</SelectItem>
-                {depots.map((depot) => (
+                {depots.filter(d => d.is_active).map((depot) => (
                   <SelectItem key={depot.id} value={depot.label}>
                     {depot.label}
                   </SelectItem>
@@ -288,7 +292,7 @@ export function SubmissionsViewer({
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
                 <SelectItem value="all">All Types</SelectItem>
-                {types.map((type) => (
+                {types.filter(t => t.is_active).map((type) => (
                   <SelectItem key={type.id} value={type.label}>
                     {type.label}
                   </SelectItem>
@@ -366,7 +370,7 @@ export function SubmissionsViewer({
                 filteredSubmissions.map((sub) => (
                   <TableRow key={sub.id} className="border-zinc-800 hover:bg-zinc-900/50">
                     <TableCell className="font-medium text-white">{sub.name}</TableCell>
-                    <TableCell className="text-zinc-300">{sub.phone}</TableCell>
+                    <TableCell className="text-zinc-300">{sub.phone_number}</TableCell>
                     <TableCell className="text-zinc-300 max-w-[200px] truncate" title={sub.details}>
                       {sub.details}
                     </TableCell>
@@ -376,7 +380,7 @@ export function SubmissionsViewer({
                     <TableCell className="text-zinc-300">{sub.type}</TableCell>
                     <TableCell className="text-zinc-300">{sub.depot}</TableCell>
                     <TableCell className="text-zinc-400">
-                      {sub.trade_number ? `#${sub.trade_number}` : 'N/A'}
+                      {sub.trade_number || 'N/A'}
                     </TableCell>
                     <TableCell className="text-zinc-400 text-sm">
                       {formatDateTime(sub.submitted_at)}
@@ -417,7 +421,7 @@ export function SubmissionsViewer({
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">Phone</p>
-                  <p className="text-white font-medium mt-1">{selectedSubmission.phone}</p>
+                  <p className="text-white font-medium mt-1">{selectedSubmission.phone_number}</p>
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">Weight</p>
@@ -434,7 +438,7 @@ export function SubmissionsViewer({
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">Trade #</p>
                   <p className="text-white font-medium mt-1">
-                    {selectedSubmission.trade_number ? `#${selectedSubmission.trade_number}` : 'N/A'}
+                    {selectedSubmission.trade_number || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -444,6 +448,12 @@ export function SubmissionsViewer({
                   {selectedSubmission.details}
                 </p>
               </div>
+              {selectedSubmission.device_fingerprint && (
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Device Fingerprint</p>
+                  <p className="text-zinc-400 mt-1 text-sm font-mono">{selectedSubmission.device_fingerprint}</p>
+                </div>
+              )}
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wide">Submitted At</p>
                 <p className="text-zinc-400 mt-1">{formatDateTime(selectedSubmission.submitted_at)}</p>

@@ -12,7 +12,8 @@ export interface PoolingSchedule {
   id: string
   trade_id: string
   location: string
-  date: string
+  pooling_date: string
+  order_index: number
   created_at: string
 }
 
@@ -20,15 +21,16 @@ export interface DropdownOption {
   id: string
   category: 'details' | 'type' | 'depot'
   label: string
-  order: number
+  is_active: boolean
+  order_index: number
   created_at: string
 }
 
 export interface Submission {
   id: string
-  trade_id: string
-  trade_number?: number
-  phone: string
+  trade_number: string
+  phone_number: string
+  device_fingerprint?: string
   name: string
   details: string
   weight: number
@@ -46,7 +48,7 @@ export interface TradeFormData {
 
 export interface PoolingFormData {
   location: string
-  date: string
+  pooling_date: string
 }
 
 export interface DropdownFormData {
@@ -56,7 +58,7 @@ export interface DropdownFormData {
 
 // Filter types
 export interface SubmissionFilters {
-  trade_id?: string
+  trade_number?: string
   depot?: string
   type?: string
 }
