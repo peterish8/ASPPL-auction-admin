@@ -425,20 +425,30 @@ export function SubmissionsViewer({
         </CardContent>
       </Card>
 
-      {/* Export Actions & Results Summary */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <p className="text-sm text-zinc-400">
-          Showing <span className="font-medium text-white">{filteredSubmissions.length}</span> of{' '}
-          <span className="font-medium text-white">{submissions.length}</span> submissions
-          <span className="mx-2 text-zinc-600">|</span>
-          Total Weight: <span className="font-medium text-green-400">{totalWeight.toLocaleString()} kg</span>
-          {filters.trade_number !== 'all' && (
-            <span className="ml-2 text-blue-400">
-              (Trade: {filters.trade_number})
-            </span>
-          )}
-        </p>
-        <div className="flex flex-wrap gap-2">
+      {/* Stats & Actions */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="bg-zinc-900/50 border-zinc-800 p-4">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Filtered Count</span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-2xl font-bold text-white">{filteredSubmissions.length}</span>
+                <span className="text-sm text-zinc-500">of {submissions.length}</span>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="bg-zinc-900/50 border-zinc-800 p-4">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Total Weight</span>
+              <span className="text-2xl font-bold text-green-400 mt-1">
+                {totalWeight.toLocaleString()} <span className="text-sm font-normal text-zinc-500">kg</span>
+              </span>
+            </div>
+          </Card>
+        </div>
+
+        <div className="flex justify-end gap-2">
           <Button
             variant="outline"
             size="sm"
