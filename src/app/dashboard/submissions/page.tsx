@@ -6,11 +6,11 @@ export default async function SubmissionsPage() {
 
   const [submissionsResult, tradesResult, dropdownsResult] = await Promise.all([
     supabase.from('submissions').select('*').order('submitted_at', { ascending: false }),
-    supabase.from('trades').select('*').order('trade_number', { ascending: false }),
-    supabase.from('dropdowns').select('*').order('order', { ascending: true }),
+    supabase.from('trades').select('*').order('created_at', { ascending: false }),
+    supabase.from('dropdowns').select('*').eq('is_active', true).order('order_index', { ascending: true }),
   ])
 
-  // Get unique depots and types from dropdowns
+  // Get depots and types from dropdowns
   const depots = dropdownsResult.data?.filter(d => d.category === 'depot') || []
   const types = dropdownsResult.data?.filter(d => d.category === 'type') || []
 
