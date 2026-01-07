@@ -91,6 +91,7 @@ export function Sidebar() {
             return (
               <Link
                 key={item.href}
+                id={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
