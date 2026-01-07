@@ -23,7 +23,7 @@ export default async function DashboardLayout({
           {children}
         </div>
       </main>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors duration={2000} />
     </div>
   )
 }

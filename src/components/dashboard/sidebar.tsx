@@ -12,6 +12,7 @@ import {
   List,
   ClipboardList,
   RotateCcw,
+  Settings,
   LogOut,
   Menu,
   X
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/dashboard/dropdowns', label: 'Dropdowns', icon: List },
   { href: '/dashboard/submissions', label: 'Submissions', icon: ClipboardList },
   { href: '/dashboard/reset', label: 'Weekly Reset', icon: RotateCcw },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
 export function Sidebar() {
@@ -48,8 +50,8 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      {/* Mobile menu button - RIGHT side */}
+      <div className="lg:hidden fixed top-4 right-4 z-50">
         <Button
           variant="outline"
           size="icon"
@@ -68,10 +70,10 @@ export function Sidebar() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - slides from RIGHT on mobile */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-zinc-900/95 border-r border-zinc-800 flex flex-col transition-transform duration-200",
-        mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        "fixed lg:static inset-y-0 right-0 lg:right-auto lg:left-0 z-50 w-64 bg-zinc-900/95 border-l lg:border-l-0 lg:border-r border-zinc-800 flex flex-col transition-transform duration-200",
+        mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
       )}>
         {/* Logo */}
         <div className="p-6 border-b border-zinc-800">

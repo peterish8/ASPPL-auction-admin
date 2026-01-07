@@ -38,7 +38,8 @@ import {
   RefreshCw,
   X,
   Eye,
-  FileSpreadsheet
+  FileSpreadsheet,
+  AlertTriangle
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -47,13 +48,15 @@ interface SubmissionsViewerProps {
   trades: Trade[]
   depots: DropdownOption[]
   types: DropdownOption[]
+  details: DropdownOption[]
 }
 
 export function SubmissionsViewer({ 
   initialSubmissions, 
   trades, 
   depots, 
-  types 
+  types,
+  details
 }: SubmissionsViewerProps) {
   const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions)
   const [loading, setLoading] = useState(false)
@@ -62,6 +65,7 @@ export function SubmissionsViewer({
     trade_number: 'all',
     depot: 'all',
     type: 'all',
+    details: 'all',
   })
   const [viewOpen, setViewOpen] = useState(false)
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
@@ -86,11 +90,10 @@ export function SubmissionsViewer({
     }
   }
 
-  // Get unique trade numbers from submissions
-  const uniqueTradeNumbers = useMemo(() => {
-    const numbers = [...new Set(submissions.map(s => s.trade_number))]
-    return numbers.filter(Boolean).sort()
-  }, [submissions])
+  // Get unique trade numbers from trades table
+  const tradeNumbers = useMemo(() => {
+    return trades.map(t => t.trade_number).filter(Boolean).sort()
+  }, [trades])
 
   // Filter submissions
   const filteredSubmissions = useMemo(() => {
@@ -122,12 +125,37 @@ export function SubmissionsViewer({
         return false
       }
 
+      // Details filter
+      if (filters.details !== 'all' && sub.details !== filters.details) {
+        return false
+      }
+
       return true
     })
   }, [submissions, searchQuery, filters])
 
+  // Detect duplicate device fingerprints
+  const duplicateFingerprints = useMemo(() => {
+    const fpCounts = new Map<string, number>()
+    submissions.forEach(sub => {
+      if (sub.device_fingerprint) {
+        fpCounts.set(sub.device_fingerprint, (fpCounts.get(sub.device_fingerprint) || 0) + 1)
+      }
+    })
+    // Return fingerprints that appear more than once
+    const duplicates = new Set<string>()
+    fpCounts.forEach((count, fp) => {
+      if (count > 1) duplicates.add(fp)
+    })
+    return duplicates
+  }, [submissions])
+
+  const isDuplicate = (sub: Submission) => {
+    return sub.device_fingerprint && duplicateFingerprints.has(sub.device_fingerprint)
+  }
+
   const clearFilters = () => {
-    setFilters({ trade_number: 'all', depot: 'all', type: 'all' })
+    setFilters({ trade_number: 'all', depot: 'all', type: 'all', details: 'all' })
     setSearchQuery('')
   }
 
@@ -135,6 +163,7 @@ export function SubmissionsViewer({
     filters.trade_number !== 'all' || 
     filters.depot !== 'all' || 
     filters.type !== 'all' || 
+    filters.details !== 'all' ||
     searchQuery !== ''
 
   // Export functions
@@ -153,8 +182,11 @@ export function SubmissionsViewer({
       'Trade Number': sub.trade_number || 'N/A',
       'Submitted At': formatDateTime(sub.submitted_at),
     }))
-    exportToCSV(exportData, `submissions_${new Date().toISOString().split('T')[0]}`)
-    toast.success('Exported to CSV')
+    const filename = filters.trade_number !== 'all' 
+      ? `submissions_trade_${filters.trade_number}_${new Date().toISOString().split('T')[0]}`
+      : `submissions_${new Date().toISOString().split('T')[0]}`
+    exportToCSV(exportData, filename)
+    toast.success(`Exported ${filteredSubmissions.length} submissions to CSV`)
   }
 
   const handleExportJSON = () => {
@@ -162,8 +194,11 @@ export function SubmissionsViewer({
       toast.error('No data to export')
       return
     }
-    exportToJSON(filteredSubmissions, `submissions_${new Date().toISOString().split('T')[0]}`)
-    toast.success('Exported to JSON')
+    const filename = filters.trade_number !== 'all' 
+      ? `submissions_trade_${filters.trade_number}_${new Date().toISOString().split('T')[0]}`
+      : `submissions_${new Date().toISOString().split('T')[0]}`
+    exportToJSON(filteredSubmissions, filename)
+    toast.success(`Exported ${filteredSubmissions.length} submissions to JSON`)
   }
 
   const handleCopyToClipboard = async () => {
@@ -172,11 +207,11 @@ export function SubmissionsViewer({
       return
     }
     const text = filteredSubmissions.map(sub => 
-      `${sub.name} | ${sub.phone_number} | ${sub.details} | ${sub.weight}kg | ${sub.type} | ${sub.depot}`
+      `${sub.name} | ${sub.phone_number} | ${sub.details} | ${sub.weight}kg | ${sub.type} | ${sub.depot} | Trade: ${sub.trade_number}`
     ).join('\n')
     const success = await copyToClipboard(text)
     if (success) {
-      toast.success('Copied to clipboard')
+      toast.success(`Copied ${filteredSubmissions.length} submissions to clipboard`)
     } else {
       toast.error('Failed to copy')
     }
@@ -230,11 +265,11 @@ export function SubmissionsViewer({
             )}
           </div>
           <CardDescription className="text-zinc-400">
-            Filter submissions by trade, depot, or type
+            Filter submissions by trade, details, depot, or type
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -246,7 +281,7 @@ export function SubmissionsViewer({
               />
             </div>
 
-            {/* Trade Filter */}
+            {/* Trade Filter - Shows trade numbers */}
             <Select
               value={filters.trade_number}
               onValueChange={(v) => setFilters({ ...filters, trade_number: v })}
@@ -256,9 +291,27 @@ export function SubmissionsViewer({
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
                 <SelectItem value="all">All Trades</SelectItem>
-                {uniqueTradeNumbers.map((num) => (
+                {tradeNumbers.map((num) => (
                   <SelectItem key={num} value={num}>
                     Trade {num}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Details Filter - From Supabase */}
+            <Select
+              value={filters.details}
+              onValueChange={(v) => setFilters({ ...filters, details: v })}
+            >
+              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="Filter by Details" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="all">All Details</SelectItem>
+                {details.map((detail) => (
+                  <SelectItem key={detail.id} value={detail.label}>
+                    {detail.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -274,7 +327,7 @@ export function SubmissionsViewer({
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
                 <SelectItem value="all">All Depots</SelectItem>
-                {depots.filter(d => d.is_active).map((depot) => (
+                {depots.map((depot) => (
                   <SelectItem key={depot.id} value={depot.label}>
                     {depot.label}
                   </SelectItem>
@@ -292,7 +345,7 @@ export function SubmissionsViewer({
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
                 <SelectItem value="all">All Types</SelectItem>
-                {types.filter(t => t.is_active).map((type) => (
+                {types.map((type) => (
                   <SelectItem key={type.id} value={type.label}>
                     {type.label}
                   </SelectItem>
@@ -308,6 +361,11 @@ export function SubmissionsViewer({
         <p className="text-sm text-zinc-400">
           Showing <span className="font-medium text-white">{filteredSubmissions.length}</span> of{' '}
           <span className="font-medium text-white">{submissions.length}</span> submissions
+          {filters.trade_number !== 'all' && (
+            <span className="ml-2 text-blue-400">
+              (Trade: {filters.trade_number})
+            </span>
+          )}
         </p>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -335,7 +393,7 @@ export function SubmissionsViewer({
             className="border-zinc-700 hover:bg-purple-900/20 hover:border-purple-700 hover:text-purple-400"
           >
             <Copy className="h-4 w-4 mr-2" />
-            Copy to Clipboard
+            Copy {filteredSubmissions.length > 0 ? `(${filteredSubmissions.length})` : ''}
           </Button>
         </div>
       </div>
@@ -346,6 +404,7 @@ export function SubmissionsViewer({
           <Table>
             <TableHeader>
               <TableRow className="border-zinc-800 hover:bg-zinc-900/50">
+                <TableHead className="text-zinc-400 w-12">#</TableHead>
                 <TableHead className="text-zinc-400">Name</TableHead>
                 <TableHead className="text-zinc-400">Phone</TableHead>
                 <TableHead className="text-zinc-400">Details</TableHead>
@@ -360,16 +419,36 @@ export function SubmissionsViewer({
             <TableBody>
               {filteredSubmissions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-zinc-400 py-12">
+                  <TableCell colSpan={10} className="text-center text-zinc-400 py-12">
                     {hasActiveFilters 
                       ? 'No submissions match your filters.' 
                       : 'No submissions found.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSubmissions.map((sub) => (
-                  <TableRow key={sub.id} className="border-zinc-800 hover:bg-zinc-900/50">
-                    <TableCell className="font-medium text-white">{sub.name}</TableCell>
+                filteredSubmissions.map((sub, index) => (
+                  <TableRow 
+                    key={sub.id} 
+                    className={`border-zinc-800 hover:bg-zinc-900/50 ${isDuplicate(sub) ? 'bg-orange-500/10 border-l-2 border-l-orange-500' : ''}`}
+                  >
+                    <TableCell className="text-zinc-500 font-medium">
+                      <div className="flex items-center gap-1">
+                        {index + 1}
+                        {isDuplicate(sub) && (
+                          <AlertTriangle className="h-3 w-3 text-orange-400" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium text-white">
+                      <div className="flex items-center gap-2">
+                        {sub.name}
+                        {isDuplicate(sub) && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 font-medium">
+                            SAME DEVICE
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-zinc-300">{sub.phone_number}</TableCell>
                     <TableCell className="text-zinc-300 max-w-[200px] truncate" title={sub.details}>
                       {sub.details}
@@ -379,7 +458,7 @@ export function SubmissionsViewer({
                     </TableCell>
                     <TableCell className="text-zinc-300">{sub.type}</TableCell>
                     <TableCell className="text-zinc-300">{sub.depot}</TableCell>
-                    <TableCell className="text-zinc-400">
+                    <TableCell className="text-zinc-400 font-medium">
                       {sub.trade_number || 'N/A'}
                     </TableCell>
                     <TableCell className="text-zinc-400 text-sm">
@@ -412,6 +491,76 @@ export function SubmissionsViewer({
               Full details of the selected submission
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Copy/Export buttons */}
+          {selectedSubmission && (
+            <div className="flex items-center gap-2 pb-2 border-b border-zinc-800">
+              <span className="text-xs text-zinc-500">Export:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const text = `Name: ${selectedSubmission.name}\nPhone: ${selectedSubmission.phone_number}\nWeight: ${selectedSubmission.weight} kg\nType: ${selectedSubmission.type}\nDepot: ${selectedSubmission.depot}\nDetails: ${selectedSubmission.details}\nTrade: ${selectedSubmission.trade_number || 'N/A'}\nSubmitted: ${formatDateTime(selectedSubmission.submitted_at)}`
+                  await copyToClipboard(text)
+                  toast.success('Copied to clipboard')
+                }}
+                className="h-7 px-2 border-zinc-700 hover:bg-zinc-800"
+              >
+                <Copy className="h-3 w-3 mr-1" />
+                Copy
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const jsonData = {
+                    name: selectedSubmission.name,
+                    phone: selectedSubmission.phone_number,
+                    weight: selectedSubmission.weight,
+                    type: selectedSubmission.type,
+                    depot: selectedSubmission.depot,
+                    details: selectedSubmission.details,
+                    trade_number: selectedSubmission.trade_number,
+                    submitted_at: selectedSubmission.submitted_at
+                  }
+                  const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `submission_${selectedSubmission.name.replace(/\s+/g, '_')}.json`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                  toast.success('Downloaded as JSON')
+                }}
+                className="h-7 px-2 border-zinc-700 hover:bg-zinc-800"
+              >
+                <FileJson className="h-3 w-3 mr-1" />
+                JSON
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const headers = 'Name,Phone,Weight,Type,Depot,Details,Trade,Submitted'
+                  const row = `"${selectedSubmission.name}","${selectedSubmission.phone_number}",${selectedSubmission.weight},"${selectedSubmission.type}","${selectedSubmission.depot}","${selectedSubmission.details}","${selectedSubmission.trade_number || 'N/A'}","${formatDateTime(selectedSubmission.submitted_at)}"`
+                  const csv = `${headers}\n${row}`
+                  const blob = new Blob([csv], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `submission_${selectedSubmission.name.replace(/\s+/g, '_')}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                  toast.success('Downloaded as CSV')
+                }}
+                className="h-7 px-2 border-zinc-700 hover:bg-zinc-800"
+              >
+                <FileSpreadsheet className="h-3 w-3 mr-1" />
+                CSV
+              </Button>
+            </div>
+          )}
+
           {selectedSubmission && (
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
@@ -448,12 +597,6 @@ export function SubmissionsViewer({
                   {selectedSubmission.details}
                 </p>
               </div>
-              {selectedSubmission.device_fingerprint && (
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Device Fingerprint</p>
-                  <p className="text-zinc-400 mt-1 text-sm font-mono">{selectedSubmission.device_fingerprint}</p>
-                </div>
-              )}
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wide">Submitted At</p>
                 <p className="text-zinc-400 mt-1">{formatDateTime(selectedSubmission.submitted_at)}</p>

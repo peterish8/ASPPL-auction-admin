@@ -32,7 +32,7 @@ export function formatDateForInput(date: string | Date): string {
 }
 
 // Export submissions to CSV
-export function exportToCSV(data: Record<string, unknown>[], filename: string): void {
+export function exportToCSV<T extends object>(data: T[], filename: string): void {
   if (data.length === 0) return
 
   const headers = Object.keys(data[0])
@@ -40,7 +40,7 @@ export function exportToCSV(data: Record<string, unknown>[], filename: string): 
     headers.join(','),
     ...data.map(row =>
       headers.map(header => {
-        const value = row[header]
+        const value = (row as Record<string, unknown>)[header]
         // Escape quotes and wrap in quotes if contains comma
         const stringValue = String(value ?? '')
         if (stringValue.includes(',') || stringValue.includes('"')) {
@@ -55,7 +55,7 @@ export function exportToCSV(data: Record<string, unknown>[], filename: string): 
 }
 
 // Export submissions to JSON
-export function exportToJSON(data: Record<string, unknown>[], filename: string): void {
+export function exportToJSON<T>(data: T[], filename: string): void {
   const jsonContent = JSON.stringify(data, null, 2)
   downloadFile(jsonContent, `${filename}.json`, 'application/json')
 }

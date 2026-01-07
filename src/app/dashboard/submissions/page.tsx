@@ -10,9 +10,10 @@ export default async function SubmissionsPage() {
     supabase.from('dropdowns').select('*').eq('is_active', true).order('order_index', { ascending: true }),
   ])
 
-  // Get depots and types from dropdowns
+  // Get depots, types, and details from dropdowns
   const depots = dropdownsResult.data?.filter(d => d.category === 'depot') || []
   const types = dropdownsResult.data?.filter(d => d.category === 'type') || []
+  const details = dropdownsResult.data?.filter(d => d.category === 'details') || []
 
   return (
     <SubmissionsViewer 
@@ -20,6 +21,7 @@ export default async function SubmissionsPage() {
       trades={tradesResult.data || []}
       depots={depots}
       types={types}
+      details={details}
     />
   )
 }

@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Pencil, Trash2, Plus, Save, X } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface PoolingTableProps {
@@ -66,28 +66,39 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
       toast.error('Please fill in all fields')
       return
     }
-    if (!activeTrade && !newItem.trade_id) {
-      toast.error('No active trade found. Please select a trade.')
+    
+    const tradeId = newItem.trade_id || activeTrade?.id
+    
+    if (!tradeId) {
+      toast.error('No trade selected. Please create an active trade first or select a trade.')
       return
     }
+    
     setLoading(true)
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('pooling_schedule')
         .insert({
           location: newItem.location,
           pooling_date: newItem.pooling_date,
-          trade_id: newItem.trade_id || activeTrade?.id,
+          trade_id: tradeId,
         })
+        .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Insert error:', error)
+        throw error
+      }
+      
+      console.log('Inserted:', data)
       toast.success('Location added successfully')
       setNewItem({ location: '', pooling_date: '', trade_id: '' })
       setShowAddRow(false)
       refreshSchedule()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to add')
+      console.error('Error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to add location')
     } finally {
       setLoading(false)
     }
@@ -174,12 +185,32 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
         </Button>
       </div>
 
+      {/* Warning if no active trade */}
+      {!activeTrade && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+          <AlertTriangle className="h-5 w-5 text-yellow-400" />
+          <p className="text-yellow-300">
+            No active trade found. Please create and activate a trade first, or select a trade when adding locations.
+          </p>
+        </div>
+      )}
+
+      {/* Active trade info */}
+      {activeTrade && (
+        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+          <p className="text-green-300 text-sm">
+            Active Trade: <span className="font-medium">{activeTrade.trade_number}</span> ({formatDate(activeTrade.trade_date)})
+          </p>
+        </div>
+      )}
+
       <div className="rounded-lg border border-zinc-800 overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="border-zinc-800 hover:bg-zinc-900/50">
               <TableHead className="text-zinc-400">Location</TableHead>
               <TableHead className="text-zinc-400">Date</TableHead>
+              <TableHead className="text-zinc-400">Trade</TableHead>
               <TableHead className="text-zinc-400 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -202,6 +233,23 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
                     onChange={(e) => setNewItem({ ...newItem, pooling_date: e.target.value })}
                     className="bg-zinc-800 border-zinc-700"
                   />
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={newItem.trade_id || activeTrade?.id || ''}
+                    onValueChange={(v) => setNewItem({ ...newItem, trade_id: v })}
+                  >
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue placeholder="Select trade" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                      {trades.map((trade) => (
+                        <SelectItem key={trade.id} value={trade.id}>
+                          {trade.trade_number} {trade.is_active && '(Active)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -228,79 +276,87 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
 
             {schedule.length === 0 && !showAddRow ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-zinc-400 py-8">
+                <TableCell colSpan={4} className="text-center text-zinc-400 py-8">
                   No pooling locations found. Add your first location.
                 </TableCell>
               </TableRow>
             ) : (
-              schedule.map((item) => (
-                <TableRow key={item.id} className="border-zinc-800 hover:bg-zinc-900/50">
-                  <TableCell>
-                    {editingId === item.id ? (
-                      <Input
-                        value={editData.location}
-                        onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                        className="bg-zinc-800 border-zinc-700"
-                      />
-                    ) : (
-                      <span className="font-medium text-white">{item.location}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {editingId === item.id ? (
-                      <Input
-                        type="date"
-                        value={editData.pooling_date}
-                        onChange={(e) => setEditData({ ...editData, pooling_date: e.target.value })}
-                        className="bg-zinc-800 border-zinc-700"
-                      />
-                    ) : (
-                      <span className="text-zinc-300">{formatDate(item.pooling_date)}</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {editingId === item.id ? (
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="icon"
-                          onClick={() => saveEdit(item.id)}
-                          disabled={loading}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <Save className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={cancelEdit}
-                          className="hover:bg-zinc-800"
-                        >
-                          <X className="h-4 w-4 text-zinc-400" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => startEdit(item)}
-                          className="hover:bg-zinc-800"
-                        >
-                          <Pencil className="h-4 w-4 text-zinc-400" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(item)}
-                          className="hover:bg-red-900/20"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-400" />
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
+              schedule.map((item) => {
+                const itemTrade = trades.find(t => t.id === item.trade_id)
+                return (
+                  <TableRow key={item.id} className="border-zinc-800 hover:bg-zinc-900/50">
+                    <TableCell>
+                      {editingId === item.id ? (
+                        <Input
+                          value={editData.location}
+                          onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                      ) : (
+                        <span className="font-medium text-white">{item.location}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === item.id ? (
+                        <Input
+                          type="date"
+                          value={editData.pooling_date}
+                          onChange={(e) => setEditData({ ...editData, pooling_date: e.target.value })}
+                          className="bg-zinc-800 border-zinc-700"
+                        />
+                      ) : (
+                        <span className="text-zinc-300">{formatDate(item.pooling_date)}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-zinc-400 text-sm">
+                        {itemTrade?.trade_number || 'Unknown'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {editingId === item.id ? (
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="icon"
+                            onClick={() => saveEdit(item.id)}
+                            disabled={loading}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={cancelEdit}
+                            className="hover:bg-zinc-800"
+                          >
+                            <X className="h-4 w-4 text-zinc-400" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEdit(item)}
+                            className="hover:bg-zinc-800"
+                          >
+                            <Pencil className="h-4 w-4 text-zinc-400" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(item)}
+                            className="hover:bg-red-900/20"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-400" />
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
