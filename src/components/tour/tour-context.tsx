@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 export type TourStep = {
   targetId: string

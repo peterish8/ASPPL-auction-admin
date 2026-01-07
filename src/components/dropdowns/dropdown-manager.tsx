@@ -162,7 +162,7 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
         supabase.from('dropdowns').update({ order_index: option.order_index }).eq('id', swapOption.id),
       ])
       refreshOptions()
-    } catch (error) {
+    } catch {
       toast.error('Failed to reorder')
     } finally {
       setLoading(false)

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
@@ -45,8 +45,8 @@ export function LoginForm() {
     <Card className="w-full max-w-4xl bg-zinc-900/50 border-zinc-800 shadow-2xl overflow-hidden">
       <div className="grid md:grid-cols-2 h-full min-h-[500px]">
         {/* Left Side - Branding */}
-        <div className="relative hidden md:flex flex-col items-center justify-center p-10 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 border-r border-zinc-800">
-          <div className="absolute inset-0 bg-blue-500/5 opacity-20 bg-[size:20px_20px] [mask-image:radial-gradient(circle_at_center,white,transparent_80%)]" />
+        <div className="relative hidden md:flex flex-col items-center justify-center p-10 bg-linear-to-br from-zinc-800/50 to-zinc-900/50 border-r border-zinc-800">
+          <div className="absolute inset-0 bg-blue-500/5 opacity-20 bg-size-[20px_20px] mask-[radial-gradient(circle_at_center,white,transparent_80%)]" />
           <div className="relative z-10 text-center space-y-4">
             <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20 mb-6">
               <svg 
