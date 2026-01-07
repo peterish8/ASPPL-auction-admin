@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Submission, Trade, DropdownOption } from '@/lib/types'
@@ -70,8 +70,15 @@ export function SubmissionsViewer({
   const [viewOpen, setViewOpen] = useState(false)
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   
+  const [mounted, setMounted] = useState(false)
+  
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
 
   const refreshSubmissions = async () => {
     setLoading(true)
@@ -243,6 +250,8 @@ export function SubmissionsViewer({
     setSelectedSubmission(sub)
     setViewOpen(true)
   }
+
+  if (!mounted) return null
 
   return (
     <div className="space-y-6">
@@ -625,6 +634,32 @@ export function SubmissionsViewer({
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wide">Submitted At</p>
                 <p className="text-zinc-400 mt-1">{formatDateTime(selectedSubmission.submitted_at)}</p>
+              </div>
+
+              {/* Debug: Show Device Fingerprint */}
+              <div className="pt-4 border-t border-zinc-800">
+                <p className="text-xs text-zinc-500 uppercase tracking-wide">Device Fingerprint (Debug ID)</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-[10px] bg-zinc-950 px-2 py-1 rounded text-zinc-400 font-mono break-all border border-zinc-800">
+                    {selectedSubmission.device_fingerprint || 'No fingerprint detected'}
+                  </code>
+                  {selectedSubmission.device_fingerprint && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedSubmission.device_fingerprint!)
+                        toast.success('Fingerprint ID copied')
+                      }}
+                    >
+                      <Copy className="h-3 w-3 text-zinc-500" />
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[10px] text-zinc-600 mt-1">
+                  If this ID differs from another submission, they are treated as different devices (e.g. Incognito mode, different browser).
+                </p>
               </div>
             </div>
           )}
