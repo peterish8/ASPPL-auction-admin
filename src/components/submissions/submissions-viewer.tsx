@@ -135,23 +135,45 @@ export function SubmissionsViewer({
   }, [submissions, searchQuery, filters])
 
   // Detect duplicate device fingerprints
-  const duplicateFingerprints = useMemo(() => {
+  // Detect duplicate device fingerprints and assign group IDs
+  const duplicateGroups = useMemo(() => {
     const fpCounts = new Map<string, number>()
+    
+    // 1. Count occurrences
     submissions.forEach(sub => {
       if (sub.device_fingerprint) {
         fpCounts.set(sub.device_fingerprint, (fpCounts.get(sub.device_fingerprint) || 0) + 1)
       }
     })
-    // Return fingerprints that appear more than once
-    const duplicates = new Set<string>()
+    
+    // 2. Assign unique color index to each duplicate group
+    const groups = new Map<string, number>()
+    let currentGroupIndex = 0
+    
     fpCounts.forEach((count, fp) => {
-      if (count > 1) duplicates.add(fp)
+      if (count > 1) {
+        groups.set(fp, currentGroupIndex)
+        currentGroupIndex++
+      }
     })
-    return duplicates
+    
+    return groups
   }, [submissions])
 
-  const isDuplicate = (sub: Submission) => {
-    return sub.device_fingerprint && duplicateFingerprints.has(sub.device_fingerprint)
+  const getDuplicateStyle = (sub: Submission) => {
+    if (!sub.device_fingerprint || !duplicateGroups.has(sub.device_fingerprint)) return null
+    
+    const groupIndex = duplicateGroups.get(sub.device_fingerprint)!
+    const styles = [
+      { border: 'border-l-orange-500', bg: 'bg-orange-500/10', text: 'text-orange-400', badge: 'bg-orange-500/20' },
+      { border: 'border-l-purple-500', bg: 'bg-purple-500/10', text: 'text-purple-400', badge: 'bg-purple-500/20' },
+      { border: 'border-l-cyan-500', bg: 'bg-cyan-500/10', text: 'text-cyan-400', badge: 'bg-cyan-500/20' },
+      { border: 'border-l-pink-500', bg: 'bg-pink-500/10', text: 'text-pink-400', badge: 'bg-pink-500/20' },
+      { border: 'border-l-yellow-500', bg: 'bg-yellow-500/10', text: 'text-yellow-400', badge: 'bg-yellow-500/20' },
+    ]
+    
+    // Cycle through styles if we have more groups than colors
+    return styles[groupIndex % styles.length]
   }
 
   const clearFilters = () => {
@@ -426,29 +448,31 @@ export function SubmissionsViewer({
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSubmissions.map((sub, index) => (
-                  <TableRow 
-                    key={sub.id} 
-                    className={`border-zinc-800 hover:bg-zinc-900/50 ${isDuplicate(sub) ? 'bg-orange-500/10 border-l-2 border-l-orange-500' : ''}`}
-                  >
-                    <TableCell className="text-zinc-500 font-medium">
-                      <div className="flex items-center gap-1">
-                        {index + 1}
-                        {isDuplicate(sub) && (
-                          <AlertTriangle className="h-3 w-3 text-orange-400" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium text-white">
-                      <div className="flex items-center gap-2">
-                        {sub.name}
-                        {isDuplicate(sub) && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 font-medium">
-                            SAME DEVICE
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
+                filteredSubmissions.map((sub, index) => {
+                  const dupStyle = getDuplicateStyle(sub)
+                  return (
+                    <TableRow 
+                      key={sub.id} 
+                      className={`border-zinc-800 hover:bg-zinc-900/50 ${dupStyle ? `${dupStyle.bg} border-l-2 ${dupStyle.border}` : ''}`}
+                    >
+                      <TableCell className="text-zinc-500 font-medium">
+                        <div className="flex items-center gap-1">
+                          {index + 1}
+                          {dupStyle && (
+                            <AlertTriangle className={`h-3 w-3 ${dupStyle.text}`} />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium text-white">
+                        <div className="flex items-center gap-2">
+                          {sub.name}
+                          {dupStyle && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${dupStyle.badge} ${dupStyle.text} font-medium`}>
+                              SAME DEVICE ({duplicateGroups.get(sub.device_fingerprint || '')! + 1})
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                     <TableCell className="text-zinc-300">{sub.phone_number}</TableCell>
                     <TableCell className="text-zinc-300 max-w-[200px] truncate" title={sub.details}>
                       {sub.details}
@@ -475,7 +499,8 @@ export function SubmissionsViewer({
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))
+                  )
+                })
               )}
             </TableBody>
           </Table>
