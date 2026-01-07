@@ -6,6 +6,15 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
+import {
   LayoutDashboard,
   FileText,
   MapPin,
@@ -17,7 +26,7 @@ import {
   Menu,
   X
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -34,6 +43,11 @@ export function Sidebar() {
   const router = useRouter()
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -110,14 +124,48 @@ export function Sidebar() {
 
         {/* Logout */}
         <div className="p-4 border-t border-zinc-800">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-5 w-5 mr-3" />
-            Sign Out
-          </Button>
+          {!mounted ? (
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800"
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              Sign Out
+            </Button>
+          ) : (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800"
+                >
+                  <LogOut className="h-5 w-5 mr-3" />
+                  Sign Out
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Sign out?</DialogTitle>
+                  <DialogDescription className="text-zinc-400">
+                    Are you sure you want to sign out of the admin panel?
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-end gap-3 mt-4">
+                  <DialogClose asChild>
+                    <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 text-white">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button 
+                    onClick={handleLogout} 
+                    className="bg-red-600 hover:bg-red-700 text-white border-0"
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </aside>
     </>
