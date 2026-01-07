@@ -42,17 +42,17 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md bg-zinc-900/50 border-zinc-800">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold text-white">Admin Login</CardTitle>
-        <CardDescription className="text-zinc-400">
+    <Card className="w-full max-w-xl bg-zinc-900/50 border-zinc-800 shadow-xl">
+      <CardHeader className="text-center space-y-2 pb-8 pt-6">
+        <CardTitle className="text-3xl font-bold text-white">Admin Login</CardTitle>
+        <CardDescription className="text-zinc-400 text-lg">
           Enter your credentials to access the dashboard
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-zinc-300">Email</Label>
+      <CardContent className="pb-8 px-8">
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2.5">
+            <Label htmlFor="email" className="text-zinc-300 text-base">Email</Label>
             <Input
               id="email"
               type="email"
@@ -60,11 +60,11 @@ export function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-12 text-lg"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-zinc-300">Password</Label>
+          <div className="space-y-2.5">
+            <Label htmlFor="password" className="text-zinc-300 text-base">Password</Label>
             <Input
               id="password"
               type="password"
@@ -72,19 +72,19 @@ export function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-12 text-lg"
             />
           </div>
           
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
               {error}
             </div>
           )}
           
           <Button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-lg font-medium mt-2"
             disabled={loading}
           >
             {loading ? 'Signing in...' : 'Sign In'}
