@@ -711,6 +711,14 @@ export function SubmissionsViewer({
                   If this ID differs from another submission, they are treated as different devices (e.g. Incognito mode, different browser).
                 </p>
               </div>
+
+              {/* Debug: Raw Timestamps */}
+              <div className="pt-2 border-t border-zinc-800">
+                <p className="text-xs text-zinc-500 uppercase tracking-wide">Raw Stored Timestamp (UTC)</p>
+                <code className="text-[10px] bg-zinc-950 px-2 py-1 rounded text-zinc-400 font-mono mt-1 block w-fit border border-zinc-800">
+                  {selectedSubmission.submitted_at}
+                </code>
+              </div>
             </div>
           )}
         </DialogContent>

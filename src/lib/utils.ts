@@ -6,9 +6,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Format date for display
+// MANUAL TIME CORRECTION
+// If the time is wrong, adjust this value (e.g. 5.5 for +5:30 hours, -5.5 for reverse)
+const TIME_OFFSET_HOURS = 0
+
 // Format date for display
 export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString('en-IN', {
+  const d = new Date(date)
+  d.setHours(d.getHours() + TIME_OFFSET_HOURS)
+  
+  return d.toLocaleDateString('en-IN', {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',
     month: 'short',
@@ -18,7 +25,10 @@ export function formatDate(date: string | Date): string {
 
 // Format datetime for display
 export function formatDateTime(date: string | Date): string {
-  return new Date(date).toLocaleString('en-IN', {
+  const d = new Date(date)
+  d.setHours(d.getHours() + TIME_OFFSET_HOURS)
+
+  return d.toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',
     month: 'short',
