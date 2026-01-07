@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 // Format date for display
 // MANUAL TIME CORRECTION
 // If the time is wrong, adjust this value (e.g. 5.5 for +5:30 hours, -5.5 for reverse)
-const TIME_OFFSET_HOURS = 5.5
+const TIME_OFFSET_HOURS = 0
 
 // Helper to apply offset
 const applyOffset = (date: string | Date) => {
