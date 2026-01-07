@@ -68,10 +68,21 @@ export function LoginForm() {
         {/* Right Side - Form */}
         <div className="flex flex-col justify-center p-10 md:p-12 bg-zinc-900/30">
           <div className="space-y-2 mb-8 text-center md:text-left">
-            <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
-            <p className="text-zinc-400 text-base">
-              Please enter your details to sign in
-            </p>
+            {/* Desktop Text */}
+            <div className="hidden md:block space-y-2">
+              <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
+              <p className="text-zinc-400 text-base">
+                Please enter your details to sign in
+              </p>
+            </div>
+            
+            {/* Mobile Text */}
+            <div className="md:hidden space-y-2">
+              <h1 className="text-3xl font-bold text-white">Admin Login</h1>
+              <p className="text-zinc-400 text-base">
+                Enter your credentials to access the dashboard
+              </p>
+            </div>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
