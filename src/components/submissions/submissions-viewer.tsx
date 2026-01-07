@@ -212,6 +212,11 @@ export function SubmissionsViewer({
     removeDuplicates !== 'none' ||
     searchQuery !== ''
 
+  // Calculate total weight of filtered submissions
+  const totalWeight = useMemo(() => {
+    return filteredSubmissions.reduce((sum, sub) => sum + (Number(sub.weight) || 0), 0)
+  }, [filteredSubmissions])
+
   // Export functions
   const handleExportCSV = () => {
     if (filteredSubmissions.length === 0) {
@@ -425,6 +430,8 @@ export function SubmissionsViewer({
         <p className="text-sm text-zinc-400">
           Showing <span className="font-medium text-white">{filteredSubmissions.length}</span> of{' '}
           <span className="font-medium text-white">{submissions.length}</span> submissions
+          <span className="mx-2 text-zinc-600">|</span>
+          Total Weight: <span className="font-medium text-green-400">{totalWeight.toLocaleString()} kg</span>
           {filters.trade_number !== 'all' && (
             <span className="ml-2 text-blue-400">
               (Trade: {filters.trade_number})
