@@ -67,6 +67,7 @@ export function SubmissionsViewer({
     type: 'all',
     details: 'all',
   })
+  const [removeDuplicates, setRemoveDuplicates] = useState<'none' | 'name' | 'phone'>('none')
   const [viewOpen, setViewOpen] = useState(false)
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   
@@ -104,7 +105,7 @@ export function SubmissionsViewer({
 
   // Filter submissions
   const filteredSubmissions = useMemo(() => {
-    return submissions.filter(sub => {
+    const initialFiltered = submissions.filter(sub => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
@@ -139,15 +140,28 @@ export function SubmissionsViewer({
 
       return true
     })
-  }, [submissions, searchQuery, filters])
+
+    // Apply strict duplicate removal
+    if (removeDuplicates !== 'none') {
+      const seen = new Set<string>()
+      return initialFiltered.filter(sub => {
+        const key = removeDuplicates === 'name' ? sub.name.trim().toLowerCase() : sub.phone_number.trim()
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+    }
+
+    return initialFiltered
+  }, [submissions, searchQuery, filters, removeDuplicates])
 
   // Detect duplicate device fingerprints
   // Detect duplicate device fingerprints and assign group IDs
   const duplicateGroups = useMemo(() => {
     const fpCounts = new Map<string, number>()
     
-    // 1. Count occurrences
-    submissions.forEach(sub => {
+    // 1. Count occurrences in VISIBLE list
+    filteredSubmissions.forEach(sub => {
       if (sub.device_fingerprint) {
         fpCounts.set(sub.device_fingerprint, (fpCounts.get(sub.device_fingerprint) || 0) + 1)
       }
@@ -165,7 +179,7 @@ export function SubmissionsViewer({
     })
     
     return groups
-  }, [submissions])
+  }, [filteredSubmissions])
 
   const getDuplicateStyle = (sub: Submission) => {
     if (!sub.device_fingerprint || !duplicateGroups.has(sub.device_fingerprint)) return null
@@ -186,13 +200,16 @@ export function SubmissionsViewer({
   const clearFilters = () => {
     setFilters({ trade_number: 'all', depot: 'all', type: 'all', details: 'all' })
     setSearchQuery('')
+    setRemoveDuplicates('none')
   }
 
   const hasActiveFilters = 
     filters.trade_number !== 'all' || 
     filters.depot !== 'all' || 
     filters.type !== 'all' || 
+    filters.type !== 'all' || 
     filters.details !== 'all' ||
+    removeDuplicates !== 'none' ||
     searchQuery !== ''
 
   // Export functions
@@ -300,7 +317,7 @@ export function SubmissionsViewer({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -381,6 +398,22 @@ export function SubmissionsViewer({
                     {type.label}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            {/* Remove Duplicates Filter */}
+            <Select
+              value={removeDuplicates}
+              // @ts-ignore
+              onValueChange={(v) => setRemoveDuplicates(v as 'none' | 'name' | 'phone')}
+            >
+              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="Duplicates" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="none">Show All</SelectItem>
+                <SelectItem value="name">Unique Names</SelectItem>
+                <SelectItem value="phone">Unique Phones</SelectItem>
               </SelectContent>
             </Select>
           </div>
