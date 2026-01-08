@@ -98,7 +98,7 @@ export function TradesTable({ initialTrades }: TradesTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mr-14 lg:mr-0">
         <div>
           <h1 className="text-3xl font-bold text-white">Trades</h1>
           <p className="text-zinc-400 mt-1">Manage weekly trades</p>
@@ -107,8 +107,8 @@ export function TradesTable({ initialTrades }: TradesTableProps) {
           onClick={() => { setSelectedTrade(null); setFormOpen(true); }}
           className="bg-blue-600 hover:bg-blue-700"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Trade
+          <Plus className="h-4 w-4 mr-1" />
+          Trade
         </Button>
       </div>
 

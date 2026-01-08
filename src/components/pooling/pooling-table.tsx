@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { PoolingSchedule, Trade } from '@/lib/types'
@@ -30,8 +30,71 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Pencil, Trash2, Plus, Save, X, AlertTriangle } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, AlertTriangle, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+// Sortable Row Component
+function SortableRow({ 
+  children, 
+  id 
+}: { 
+  children: React.ReactNode 
+  id: string 
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <TableRow 
+      ref={setNodeRef} 
+      style={style} 
+      className={isDragging ? "bg-zinc-800/80 border-blue-500" : "border-zinc-800 hover:bg-zinc-900/50"}
+    >
+      <TableCell className="w-[40px] p-0 pl-4">
+        <button 
+          {...attributes} 
+          {...listeners}
+          className="cursor-move p-2 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-200 transition-colors"
+          type="button"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </TableCell>
+      {children}
+    </TableRow>
+  )
+}
 
 interface PoolingTableProps {
   initialSchedule: PoolingSchedule[]
@@ -52,13 +115,85 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
 
   const activeTrade = trades.find(t => t.is_active)
 
+  // Auto-sync all pooling schedules to active trade
+  useEffect(() => {
+    const syncToActiveTrade = async () => {
+      if (!activeTrade) return
+      
+      // Find items not linked to active trade
+      const itemsToSync = schedule.filter(item => item.trade_id !== activeTrade.id)
+      
+      if (itemsToSync.length === 0) return
+      
+      // Update all to active trade
+      const { error } = await supabase
+        .from('pooling_schedule')
+        .update({ trade_id: activeTrade.id })
+        .neq('trade_id', activeTrade.id)
+
+      if (!error) {
+        toast.success(`Synced ${itemsToSync.length} locations to ${activeTrade.trade_number}`)
+        refreshSchedule()
+      }
+    }
+    
+    syncToActiveTrade()
+  }, [activeTrade?.id]) // Run when active trade changes
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
   const refreshSchedule = async () => {
     const { data } = await supabase
       .from('pooling_schedule')
       .select('*')
+      .order('order_index', { ascending: true })
       .order('pooling_date', { ascending: true })
     if (data) setSchedule(data)
     router.refresh()
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (over && active.id !== over.id) {
+      setSchedule((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id)
+        const newIndex = items.findIndex((item) => item.id === over.id)
+        
+        const newItems = arrayMove(items, oldIndex, newIndex)
+        
+        // Update order in DB
+        // We update all items with their new index
+        const updates = newItems.map((item, index) => ({
+          id: item.id,
+          order_index: index,
+          location: item.location,    // Include required fields if needed by RLS or Types, though ID + order_index implies update
+          pooling_date: item.pooling_date,
+          trade_id: item.trade_id,
+        }))
+
+        // Fire and forget (or handle error quietly)
+        supabase
+          .from('pooling_schedule')
+          .upsert(updates)
+          .then(({ error }) => {
+            if (error) toast.error('Failed to save order')
+          })
+
+        return newItems
+      })
+    }
   }
 
   const handleAdd = async () => {
@@ -170,19 +305,19 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Pooling Schedule</h1>
-          <p className="text-zinc-400 mt-1">Manage pooling locations and dates</p>
+      <div>
+        <h1 className="text-3xl font-bold text-white">Pooling Schedule</h1>
+        <div className="flex justify-between items-center mt-3">
+          <p className="text-zinc-400">Manage pooling locations & dates</p>
+          <Button 
+            onClick={() => setShowAddRow(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={showAddRow}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Location
+          </Button>
         </div>
-        <Button 
-          onClick={() => setShowAddRow(true)}
-          className="bg-blue-600 hover:bg-blue-700"
-          disabled={showAddRow}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Location
-        </Button>
       </div>
 
       {/* Warning if no active trade */}
@@ -204,10 +339,16 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
         </div>
       )}
 
-      <div className="rounded-lg border border-zinc-800 overflow-hidden">
+      <DndContext 
+        sensors={sensors} 
+        collisionDetection={closestCenter} 
+        onDragEnd={handleDragEnd}
+      >
+      <div className="rounded-lg border border-zinc-800 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="border-zinc-800 hover:bg-zinc-900/50">
+              <TableHead className="w-[40px]"></TableHead>
               <TableHead className="text-zinc-400">Location</TableHead>
               <TableHead className="text-zinc-400">Date</TableHead>
               <TableHead className="text-zinc-400">Trade</TableHead>
@@ -218,6 +359,7 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
             {/* Add new row */}
             {showAddRow && (
               <TableRow className="border-zinc-800 bg-zinc-800/30">
+                <TableCell></TableCell>
                 <TableCell>
                   <Input
                     placeholder="Location name"
@@ -276,15 +418,19 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
 
             {schedule.length === 0 && !showAddRow ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-zinc-400 py-8">
+                <TableCell colSpan={5} className="text-center text-zinc-400 py-8">
                   No pooling locations found. Add your first location.
                 </TableCell>
               </TableRow>
             ) : (
-              schedule.map((item) => {
+              <SortableContext 
+                items={schedule.map(s => s.id)} 
+                strategy={verticalListSortingStrategy}
+              >
+              {schedule.map((item) => {
                 const itemTrade = trades.find(t => t.id === item.trade_id)
                 return (
-                  <TableRow key={item.id} className="border-zinc-800 hover:bg-zinc-900/50">
+                  <SortableRow key={item.id} id={item.id}>
                     <TableCell>
                       {editingId === item.id ? (
                         <Input
@@ -354,13 +500,15 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
                         </div>
                       )}
                     </TableCell>
-                  </TableRow>
+                  </SortableRow>
                 )
-              })
+              })}
+              </SortableContext>
             )}
           </TableBody>
         </Table>
       </div>
+      </DndContext>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

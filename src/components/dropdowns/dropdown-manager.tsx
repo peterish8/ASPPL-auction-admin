@@ -171,9 +171,9 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="mr-14 lg:mr-0">
         <h1 className="text-3xl font-bold text-white">Dropdown Manager</h1>
-        <p className="text-zinc-400 mt-1">Manage dropdown options for the user form</p>
+        <p className="text-zinc-400 mt-1">Manage dropdown options</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>

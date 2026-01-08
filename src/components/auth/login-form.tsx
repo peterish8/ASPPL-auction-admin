@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
+import { toast } from 'sonner'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
@@ -22,15 +23,20 @@ export function LoginForm() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Attempting login for:', email)
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
+        console.error('Login error:', error)
+        toast.error(error.message)
         setError(error.message)
         return
       }
+
+      console.log('Login success:', data)
 
       router.push('/dashboard')
       router.refresh()

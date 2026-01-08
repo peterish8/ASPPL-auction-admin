@@ -153,13 +153,13 @@ export function WeeklyReset({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div className="mr-14 lg:mr-0">
         <h1 className="text-3xl font-bold text-white">Weekly Reset</h1>
         <p className="text-zinc-400 mt-1">Close current trade and prepare for the next week</p>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-zinc-400">Active Trade</CardTitle>
@@ -237,8 +237,8 @@ export function WeeklyReset({
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm text-zinc-400">Submissions</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-zinc-400">Submissions:</p>
                     <p className="text-xl font-bold text-blue-400">{submissionCount}</p>
                   </div>
                 </div>

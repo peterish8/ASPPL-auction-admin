@@ -81,7 +81,7 @@ export function SettingsManager({ initialNextOpeningDate }: SettingsManagerProps
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div className="mr-14 lg:mr-0">
         <h1 className="text-3xl font-bold text-white flex items-center gap-3">
           <Settings className="h-8 w-8" />
           Settings

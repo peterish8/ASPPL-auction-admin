@@ -278,7 +278,7 @@ export function SubmissionsViewer({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mr-14 lg:mr-0">
         <div>
           <h1 className="text-3xl font-bold text-white">Submissions</h1>
           <p className="text-zinc-400 mt-1">View and export all trade submissions</p>
@@ -299,40 +299,37 @@ export function SubmissionsViewer({
 
       {/* Filters Card */}
       <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        <CardHeader className="pb-3 pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 shrink-0">
               <Filter className="h-5 w-5 text-zinc-400" />
               <CardTitle className="text-white text-lg">Filters</CardTitle>
+            </div>
+            {/* Search bar in header */}
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <Input
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-zinc-800 border-zinc-700 h-9"
+              />
             </div>
             {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="text-zinc-400 hover:text-white"
+                className="text-zinc-400 hover:text-white shrink-0"
               >
                 <X className="h-4 w-4 mr-1" />
-                Clear all
+                Clear
               </Button>
             )}
           </div>
-          <CardDescription className="text-zinc-400">
-            Filter submissions by trade, details, depot, or type
-          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-              <Input
-                placeholder="Search name, phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-zinc-800 border-zinc-700"
-              />
-            </div>
+        <CardContent className="pt-0 pb-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
 
             {/* Trade Filter - Shows trade numbers */}
             <Select
@@ -448,7 +445,8 @@ export function SubmissionsViewer({
           </Card>
         </div>
 
-        <div className="flex justify-end gap-2">
+        {/* Desktop Export Buttons */}
+        <div className="hidden lg:flex justify-end gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -475,6 +473,35 @@ export function SubmissionsViewer({
           >
             <Copy className="h-4 w-4 mr-2" />
             Copy {filteredSubmissions.length > 0 ? `(${filteredSubmissions.length})` : ''}
+          </Button>
+        </div>
+
+        {/* Mobile Export Buttons */}
+        <div className="flex lg:hidden items-center gap-2">
+          <span className="text-zinc-400 text-sm">Export:</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="border-zinc-700 hover:bg-green-900/20 hover:border-green-700 hover:text-green-400 px-2"
+          >
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportJSON}
+            className="border-zinc-700 hover:bg-blue-900/20 hover:border-blue-700 hover:text-blue-400 px-2"
+          >
+            JSON
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyToClipboard}
+            className="border-zinc-700 hover:bg-purple-900/20 hover:border-purple-700 hover:text-purple-400 px-2"
+          >
+            Copy
           </Button>
         </div>
       </div>
