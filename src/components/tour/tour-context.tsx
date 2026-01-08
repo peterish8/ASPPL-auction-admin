@@ -214,7 +214,11 @@ function TourOverlay() {
   if (typeof document === 'undefined') return null
 
   const isMobile = window.innerWidth < 768
-  const effectivePosition = isMobile ? 'bottom' : currentStep.position
+  const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024
+  
+  // On mobile (<768), sidebar is Right, but 'bottom' with clamp works best (shifts left).
+  // On tablet (768-1024), sidebar is Right, so we force 'left'.
+  const effectivePosition = isMobile ? 'bottom' : (isTablet ? 'left' : currentStep.position)
 
   return createPortal(
     <div className="fixed inset-0 z-[100] isolate">
@@ -253,6 +257,7 @@ function TourOverlay() {
         style={{
           top: effectivePosition === 'bottom' ? targetRect.bottom + 12 : targetRect.top,
           left: effectivePosition === 'right' ? targetRect.right + 12 : 
+                effectivePosition === 'left' ? targetRect.left - 332 : // 320 width + 12 gap
                 effectivePosition === 'bottom' ? Math.min(Math.max(12, targetRect.left), window.innerWidth - 332) : undefined,
           right: effectivePosition === 'right' && targetRect.right + 320 > window.innerWidth ? 12 : undefined
         }}
