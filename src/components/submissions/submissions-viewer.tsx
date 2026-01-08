@@ -280,7 +280,7 @@ export function SubmissionsViewer({
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mr-14 lg:mr-0">
         <div>
-          <h1 className="text-3xl font-bold text-white">Submissions</h1>
+          <h1 id="submissions-title" className="text-3xl font-bold text-white">Submissions</h1>
           <p className="text-zinc-400 mt-1">View and export all trade submissions</p>
         </div>
         <div className="flex items-center gap-2">

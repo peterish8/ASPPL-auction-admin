@@ -307,7 +307,7 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold text-white">Pooling Schedule</h1>
+        <h1 id="pooling-title" className="text-3xl font-bold text-white">Pooling Schedule</h1>
         <div className="flex justify-between items-center mt-3">
           <p className="text-zinc-400">Manage pooling locations & dates</p>
           <Button 

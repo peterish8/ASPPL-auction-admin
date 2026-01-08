@@ -100,7 +100,7 @@ export function TradesTable({ initialTrades }: TradesTableProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center mr-14 lg:mr-0">
         <div>
-          <h1 className="text-3xl font-bold text-white">Trades</h1>
+          <h1 id="trades-title" className="text-3xl font-bold text-white">Trades</h1>
           <p className="text-zinc-400 mt-1">Manage weekly trades</p>
         </div>
         <Button 

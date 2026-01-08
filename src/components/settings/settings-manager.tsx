@@ -82,7 +82,7 @@ export function SettingsManager({ initialNextOpeningDate }: SettingsManagerProps
     <div className="space-y-6">
       {/* Header */}
       <div className="mr-14 lg:mr-0">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+        <h1 id="settings-title" className="text-3xl font-bold text-white flex items-center gap-3">
           <Settings className="h-8 w-8" />
           Settings
         </h1>
@@ -207,7 +207,7 @@ export function SettingsManager({ initialNextOpeningDate }: SettingsManagerProps
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 border border-zinc-700">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-zinc-800/50 border border-zinc-700 gap-4 sm:gap-0">
             <div>
               <p className="font-medium text-white mb-1">New to the dashboard?</p>
               <p className="text-sm text-zinc-400">
@@ -216,7 +216,7 @@ export function SettingsManager({ initialNextOpeningDate }: SettingsManagerProps
             </div>
             <Button 
               onClick={startTour}
-              className="bg-purple-600 hover:bg-purple-700 ml-4 shrink-0"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto sm:ml-4 shrink-0"
             >
               Start Tour
             </Button>

@@ -80,6 +80,15 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const router = useRouter()
 
+  // Prefetch all tour routes for instant navigation
+  useEffect(() => {
+    TOUR_STEPS.forEach(step => {
+      if (step.route) {
+        router.prefetch(step.route)
+      }
+    })
+  }, [router])
+
   // Handle step changes (navigation)
   useEffect(() => {
     if (isActive) {
@@ -154,28 +163,48 @@ function TourOverlay() {
 
   // Update target rect when step changes or window resizes
   useEffect(() => {
+    let checkInterval: NodeJS.Timeout
+
     const updateRect = () => {
       const element = document.getElementById(currentStep.targetId)
       if (element) {
-        setTargetRect(element.getBoundingClientRect())
-        // Scroll element into view if needed
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      } else {
-        // Retry shortly if element not found (might be loading)
-        setTimeout(() => {
-          const el = document.getElementById(currentStep.targetId)
-          if (el) setTargetRect(el.getBoundingClientRect())
-        }, 500)
+        const rect = element.getBoundingClientRect()
+        // Only ensure visible once, or if significantly off-screen
+        // element.scrollIntoView({ behavior: 'smooth', block: 'center' }) 
+        
+        setTargetRect(prev => {
+          // Simple equality check to prevent excessive re-renders
+          if (prev && 
+              Math.abs(prev.top - rect.top) < 1 && 
+              Math.abs(prev.left - rect.left) < 1 &&
+              Math.abs(prev.width - rect.width) < 1 &&
+              Math.abs(prev.height - rect.height) < 1) {
+            return prev
+          }
+          return rect
+        })
       }
     }
 
-    // Wait a bit for navigation to complete
-    const timer = setTimeout(updateRect, 300)
-    window.addEventListener('resize', updateRect)
+    // Scroll into view initially
+    const element = document.getElementById(currentStep.targetId)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+
+    // Check frequently (every 50ms) to handle animations smoothly
+    updateRect()
+    checkInterval = setInterval(updateRect, 50)
+
+    const handleResize = () => {
+      updateRect()
+    }
+
+    window.addEventListener('resize', handleResize)
     
     return () => {
-      clearTimeout(timer)
-      window.removeEventListener('resize', updateRect)
+      if (checkInterval) clearInterval(checkInterval)
+      window.removeEventListener('resize', handleResize)
     }
   }, [currentStepIndex, currentStep.targetId])
 
@@ -184,8 +213,11 @@ function TourOverlay() {
   // Ensure we render on client side only (portal)
   if (typeof document === 'undefined') return null
 
+  const isMobile = window.innerWidth < 768
+  const effectivePosition = isMobile ? 'bottom' : currentStep.position
+
   return createPortal(
-    <div className="fixed inset-0 z-50 isolate">
+    <div className="fixed inset-0 z-[100] isolate">
       {/* Background Mask */}
       <div 
         className="absolute bg-black/70 transition-all duration-300 ease-in-out"
@@ -217,12 +249,12 @@ function TourOverlay() {
 
       {/* Tooltip Card */}
       <div 
-        className="absolute transition-all duration-300 ease-in-out z-50"
+        className="absolute transition-all duration-300 ease-in-out z-[101]"
         style={{
-          top: currentStep.position === 'bottom' ? targetRect.bottom + 12 : undefined,
-          left: currentStep.position === 'right' ? targetRect.right + 12 : 
-                currentStep.position === 'bottom' ? targetRect.left : undefined,
-          right: currentStep.position === 'right' && targetRect.right + 320 > window.innerWidth ? 12 : undefined
+          top: effectivePosition === 'bottom' ? targetRect.bottom + 12 : targetRect.top,
+          left: effectivePosition === 'right' ? targetRect.right + 12 : 
+                effectivePosition === 'bottom' ? Math.min(Math.max(12, targetRect.left), window.innerWidth - 332) : undefined,
+          right: effectivePosition === 'right' && targetRect.right + 320 > window.innerWidth ? 12 : undefined
         }}
       >
         <div className="w-80 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-5 animate-in fade-in slide-in-from-bottom-4 duration-300">

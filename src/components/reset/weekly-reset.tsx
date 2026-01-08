@@ -154,7 +154,7 @@ export function WeeklyReset({
     <div className="space-y-6">
       {/* Header */}
       <div className="mr-14 lg:mr-0">
-        <h1 className="text-3xl font-bold text-white">Weekly Reset</h1>
+        <h1 id="reset-title" className="text-3xl font-bold text-white">Weekly Reset</h1>
         <p className="text-zinc-400 mt-1">Close current trade and prepare for the next week</p>
       </div>
 

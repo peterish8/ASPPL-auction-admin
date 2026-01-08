@@ -27,6 +27,7 @@ import {
   X
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useTour } from '@/components/tour/tour-context'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -44,6 +45,22 @@ export function Sidebar() {
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  
+  // Safe tour context usage
+  let isTourActive = false
+  try {
+    const tour = useTour()
+    isTourActive = tour.isActive
+  } catch (e) {
+    // Ignore error if used outside provider
+  }
+
+  // Auto-open sidebar on mobile when tour is active
+  useEffect(() => {
+    if (isTourActive) {
+      setMobileOpen(true)
+    }
+  }, [isTourActive])
 
   useEffect(() => {
     setMounted(true)

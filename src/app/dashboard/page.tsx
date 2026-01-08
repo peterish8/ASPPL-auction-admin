@@ -40,7 +40,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
+        <h1 id="dashboard-title" className="text-3xl font-bold text-white">Dashboard Overview</h1>
         <p className="text-zinc-400 mt-1">Welcome to the Trade & Auction Control Panel</p>
       </div>
 
