@@ -109,7 +109,7 @@ export function Sidebar() {
         {/* Logo */}
         <div className="p-6 border-b border-zinc-800">
           <h1 className="text-xl font-bold text-white">
-            Trade Admin
+            ASPPL Admin
           </h1>
           <p className="text-sm text-zinc-400 mt-1">Control Panel</p>
         </div>
