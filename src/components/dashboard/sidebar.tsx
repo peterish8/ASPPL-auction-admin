@@ -107,11 +107,22 @@ export function Sidebar() {
         mobileOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
       )}>
         {/* Logo */}
-        <div className="p-6 border-b border-zinc-800">
-          <h1 className="text-xl font-bold text-white">
-            ASPPL Admin
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">Control Panel</p>
+        {/* Logo */}
+        <div className="p-6 border-b border-zinc-800 flex justify-between items-start">
+          <div>
+            <h1 className="text-xl font-bold text-white">
+              ASPPL Admin
+            </h1>
+            <p className="text-sm text-zinc-400 mt-1">Control Panel</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden -mt-1 -mr-2 text-zinc-400 hover:text-white hover:bg-zinc-800"
+            onClick={() => setMobileOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Navigation */}
