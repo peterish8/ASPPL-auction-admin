@@ -194,6 +194,12 @@ export function Sidebar() {
               </DialogContent>
             </Dialog>
           )}
+          
+          <div className="mt-6 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600 hover:text-zinc-500 transition-colors select-none">
+              Designed by PTC
+            </p>
+          </div>
         </div>
       </aside>
     </>
