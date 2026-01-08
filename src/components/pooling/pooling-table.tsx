@@ -85,8 +85,9 @@ function SortableRow({
         <button 
           {...attributes} 
           {...listeners}
-          className="cursor-move p-2 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-200 transition-colors"
+          className="cursor-move p-2 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-200 transition-colors touch-none"
           type="button"
+          style={{ touchAction: 'none' }}
         >
           <GripVertical className="h-4 w-4" />
         </button>

@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Pencil, Trash2, Plus, Save, X, GripVertical, ArrowUp, ArrowDown } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface DropdownManagerProps {
@@ -28,6 +28,68 @@ const CATEGORIES = [
   { value: 'type', label: 'Type' },
   { value: 'depot', label: 'Depot' },
 ] as const
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+function SortableItem({
+  id,
+  children
+}: {
+  id: string
+  children: React.ReactNode
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 p-3 rounded-lg transition-colors ${
+        isDragging ? "bg-zinc-800/80 border border-blue-500" : "bg-zinc-800/30 hover:bg-zinc-800/50"
+      }`}
+    >
+      <div 
+        {...attributes} 
+        {...listeners}
+        className="cursor-move p-1 hover:bg-zinc-800 rounded text-zinc-600 hover:text-zinc-400 touch-none"
+        style={{ touchAction: 'none' }}
+      >
+        <GripVertical className="h-5 w-5" />
+      </div>
+      {children}
+    </div>
+  )
+}
 
 export function DropdownManager({ initialOptions }: DropdownManagerProps) {
   const [options, setOptions] = useState<DropdownOption[]>(initialOptions)
@@ -42,9 +104,67 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
   const router = useRouter()
   const supabase = createClient()
 
-  const filteredOptions = options
-    .filter(opt => opt.category === activeTab && opt.is_active)
+  const filteredOptions = options    .filter(opt => opt.category === activeTab && opt.is_active)
     .sort((a, b) => a.order_index - b.order_index)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (!over || active.id === over.id) return
+    
+    const oldIndex = filteredOptions.findIndex(item => item.id === active.id)
+    const newIndex = filteredOptions.findIndex(item => item.id === over.id)
+    
+    if (oldIndex === -1 || newIndex === -1) return
+
+    // Optimistic update
+    const newFiltered = arrayMove(filteredOptions, oldIndex, newIndex)
+    
+    // Update order_indexes
+    const updates = newFiltered.map((item, index) => ({
+      ...item,
+      order_index: index
+    }))
+
+    // Update local state
+    setOptions(prev => {
+      const otherOptions = prev.filter(p => p.category !== activeTab || !p.is_active)
+      return [...otherOptions, ...updates]
+    })
+
+    // Persist to DB
+    try {
+      const { error } = await supabase
+        .from('dropdowns')
+        .upsert(
+          updates.map(item => ({
+            id: item.id,
+            category: item.category,
+            label: item.label,
+            is_active: item.is_active,
+            order_index: item.order_index
+          }))
+        )
+
+      if (error) throw error
+    } catch (error) {
+      toast.error('Failed to update order')
+      refreshOptions() // Revert on error
+    }
+  }
 
   const refreshOptions = async () => {
     const { data } = await supabase
@@ -147,27 +267,7 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
     }
   }
 
-  const moveOption = async (option: DropdownOption, direction: 'up' | 'down') => {
-    const currentIndex = filteredOptions.findIndex(o => o.id === option.id)
-    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
 
-    if (swapIndex < 0 || swapIndex >= filteredOptions.length) return
-
-    const swapOption = filteredOptions[swapIndex]
-    setLoading(true)
-
-    try {
-      await Promise.all([
-        supabase.from('dropdowns').update({ order_index: swapOption.order_index }).eq('id', option.id),
-        supabase.from('dropdowns').update({ order_index: option.order_index }).eq('id', swapOption.id),
-      ])
-      refreshOptions()
-    } catch {
-      toast.error('Failed to reorder')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -246,81 +346,69 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
                       No options found. Add your first option.
                     </div>
                   ) : (
-                    filteredOptions.map((option, index) => (
-                      <div
-                        key={option.id}
-                        className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors"
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext
+                        items={filteredOptions.map(o => o.id)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        <GripVertical className="h-5 w-5 text-zinc-600" />
-                        
-                        {editingId === option.id ? (
-                          <>
-                            <Input
-                              value={editLabel}
-                              onChange={(e) => setEditLabel(e.target.value)}
-                              className="flex-1 bg-zinc-800 border-zinc-700"
-                              onKeyDown={(e) => e.key === 'Enter' && saveEdit(option.id)}
-                            />
-                            <Button
-                              size="icon"
-                              onClick={() => saveEdit(option.id)}
-                              disabled={loading}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Save className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={cancelEdit}
-                              className="hover:bg-zinc-800"
-                            >
-                              <X className="h-4 w-4 text-zinc-400" />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <span className="flex-1 text-white font-medium">{option.label}</span>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveOption(option, 'up')}
-                                disabled={index === 0}
-                                className="hover:bg-zinc-800 h-8 w-8"
-                              >
-                                <ArrowUp className="h-4 w-4 text-zinc-400" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveOption(option, 'down')}
-                                disabled={index === filteredOptions.length - 1}
-                                className="hover:bg-zinc-800 h-8 w-8"
-                              >
-                                <ArrowDown className="h-4 w-4 text-zinc-400" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => startEdit(option)}
-                                className="hover:bg-zinc-800 h-8 w-8"
-                              >
-                                <Pencil className="h-4 w-4 text-zinc-400" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(option)}
-                                className="hover:bg-red-900/20 h-8 w-8"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-400" />
-                              </Button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))
+                        {filteredOptions.map((option) => (
+                          <SortableItem key={option.id} id={option.id}>
+                            {editingId === option.id ? (
+                              <div className="flex items-center gap-2 flex-1">
+                                <Input
+                                  value={editLabel}
+                                  onChange={(e) => setEditLabel(e.target.value)}
+                                  className="flex-1 bg-zinc-800 border-zinc-700"
+                                  onKeyDown={(e) => e.key === 'Enter' && saveEdit(option.id)}
+                                />
+                                <Button
+                                  size="icon"
+                                  onClick={() => saveEdit(option.id)}
+                                  disabled={loading}
+                                  className="bg-green-600 hover:bg-green-700 h-8 w-8"
+                                >
+                                  <Save className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={cancelEdit}
+                                  className="hover:bg-zinc-800 h-8 w-8"
+                                >
+                                  <X className="h-4 w-4 text-zinc-400" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="flex-1 text-white font-medium">{option.label}</span>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => startEdit(option)}
+                                    className="hover:bg-zinc-800 h-8 w-8"
+                                  >
+                                    <Pencil className="h-4 w-4 text-zinc-400" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(option)}
+                                    className="hover:bg-red-900/20 h-8 w-8"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-400" />
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </SortableItem>
+                        ))}
+                      </SortableContext>
+                    </DndContext>
                   )}
                 </div>
               </CardContent>
