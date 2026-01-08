@@ -11,8 +11,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog"
 import {
   DropdownMenu,
@@ -58,7 +56,7 @@ export function Sidebar() {
   try {
     const tour = useTour()
     isTourActive = tour.isActive
-  } catch (e) {
+  } catch {
     // Ignore error if used outside provider
   }
 

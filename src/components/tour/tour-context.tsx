@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { createPortal } from 'react-dom'
+import { X, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export type TourStep = {
   targetId: string
@@ -21,7 +24,7 @@ interface TourContextType {
   steps: TourStep[]
 }
 
-const TourContext = createContext<TourContextType | undefined>(undefined)
+export const TourContext = createContext<TourContextType | undefined>(undefined)
 
 const TOUR_STEPS: TourStep[] = [
   {
@@ -69,7 +72,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     targetId: 'nav-settings',
     title: 'Global Settings',
-    content: 'Access general admin settings and view system information.',
+    content: 'Configure system-wide settings like the "Next Booking Date" displayed to users.',
     position: 'right',
     route: '/dashboard/settings'
   }
@@ -152,9 +155,6 @@ export const useTour = () => {
 }
 
 // --- Internal Overlay Component ---
-import { createPortal } from 'react-dom'
-import { X, ChevronRight, ChevronLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 function TourOverlay() {
   const { steps, currentStepIndex, nextStep, prevStep, stopTour } = useTour()
@@ -163,8 +163,6 @@ function TourOverlay() {
 
   // Update target rect when step changes or window resizes
   useEffect(() => {
-    let checkInterval: NodeJS.Timeout
-
     const updateRect = () => {
       const element = document.getElementById(currentStep.targetId)
       if (element) {
@@ -194,7 +192,7 @@ function TourOverlay() {
 
     // Check frequently (every 50ms) to handle animations smoothly
     updateRect()
-    checkInterval = setInterval(updateRect, 50)
+    const checkInterval = setInterval(updateRect, 50)
 
     const handleResize = () => {
       updateRect()
@@ -203,7 +201,7 @@ function TourOverlay() {
     window.addEventListener('resize', handleResize)
     
     return () => {
-      if (checkInterval) clearInterval(checkInterval)
+      clearInterval(checkInterval)
       window.removeEventListener('resize', handleResize)
     }
   }, [currentStepIndex, currentStep.targetId])
@@ -221,6 +219,7 @@ function TourOverlay() {
   const effectivePosition = isMobile ? 'bottom' : (isTablet ? 'left' : currentStep.position)
 
   return createPortal(
+    // eslint-disable-next-line tailwindcss/no-arbitrary-value
     <div className="fixed inset-0 z-[100] isolate">
       {/* Background Mask */}
       <div 

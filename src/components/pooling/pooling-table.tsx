@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { PoolingSchedule, Trade } from '@/lib/types'
@@ -116,12 +116,24 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
 
   const activeTrade = trades.find(t => t.is_active)
 
+  const refreshSchedule = useCallback(async () => {
+    const { data } = await supabase
+      .from('pooling_schedule')
+      .select('*')
+      .order('order_index', { ascending: true })
+      .order('pooling_date', { ascending: true })
+    if (data) setSchedule(data)
+    router.refresh()
+  }, [router, supabase])
+
   // Auto-sync all pooling schedules to active trade
   useEffect(() => {
     const syncToActiveTrade = async () => {
+      // If no active trade, we can't sync anything
       if (!activeTrade) return
       
-      // Find items not linked to active trade
+      // Find items that need updating
+      // We only want to run this if there are actually items that mismatch
       const itemsToSync = schedule.filter(item => item.trade_id !== activeTrade.id)
       
       if (itemsToSync.length === 0) return
@@ -139,7 +151,7 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
     }
     
     syncToActiveTrade()
-  }, [activeTrade?.id]) // Run when active trade changes
+  }, [activeTrade, refreshSchedule, schedule, supabase])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -154,15 +166,7 @@ export function PoolingTable({ initialSchedule, trades }: PoolingTableProps) {
     })
   )
 
-  const refreshSchedule = async () => {
-    const { data } = await supabase
-      .from('pooling_schedule')
-      .select('*')
-      .order('order_index', { ascending: true })
-      .order('pooling_date', { ascending: true })
-    if (data) setSchedule(data)
-    router.refresh()
-  }
+
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event

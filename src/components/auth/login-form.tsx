@@ -38,7 +38,7 @@ export function LoginForm() {
 
       console.log('Login success:', data)
 
-      router.push('/dashboard')
+      router.push('/dashboard/submissions')
       router.refresh()
     } catch {
       setError('An unexpected error occurred')

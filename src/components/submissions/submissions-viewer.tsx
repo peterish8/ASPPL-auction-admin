@@ -7,7 +7,7 @@ import { Submission, Trade, DropdownOption } from '@/lib/types'
 import { formatDateTime, exportToCSV, exportToJSON, copyToClipboard } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -406,7 +406,6 @@ export function SubmissionsViewer({
             {/* Remove Duplicates Filter */}
             <Select
               value={removeDuplicates}
-              // @ts-ignore
               onValueChange={(v) => setRemoveDuplicates(v as 'none' | 'name' | 'phone')}
             >
               <SelectTrigger className="bg-zinc-800 border-zinc-700">

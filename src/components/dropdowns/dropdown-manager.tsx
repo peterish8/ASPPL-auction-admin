@@ -160,7 +160,7 @@ export function DropdownManager({ initialOptions }: DropdownManagerProps) {
         )
 
       if (error) throw error
-    } catch (error) {
+    } catch {
       toast.error('Failed to update order')
       refreshOptions() // Revert on error
     }
