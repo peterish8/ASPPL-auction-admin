@@ -69,7 +69,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     targetId: 'nav-settings',
     title: 'Global Settings',
-    content: 'Configure system-wide settings like the "Next Booking Date" displayed to users.',
+    content: 'Access general admin settings and view system information.',
     position: 'right',
     route: '/dashboard/settings'
   }
