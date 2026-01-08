@@ -219,8 +219,7 @@ function TourOverlay() {
   const effectivePosition = isMobile ? 'bottom' : (isTablet ? 'left' : currentStep.position)
 
   return createPortal(
-    // eslint-disable-next-line tailwindcss/no-arbitrary-value
-    <div className="fixed inset-0 z-[100] isolate">
+    <div className="fixed inset-0 isolate" style={{ zIndex: 100 }}>
       {/* Background Mask */}
       <div 
         className="absolute bg-black/70 transition-all duration-300 ease-in-out"
@@ -252,8 +251,9 @@ function TourOverlay() {
 
       {/* Tooltip Card */}
       <div 
-        className="absolute transition-all duration-300 ease-in-out z-[101]"
+        className="absolute transition-all duration-300 ease-in-out"
         style={{
+          zIndex: 101,
           top: effectivePosition === 'bottom' ? targetRect.bottom + 12 : targetRect.top,
           left: effectivePosition === 'right' ? targetRect.right + 12 : 
                 effectivePosition === 'left' ? targetRect.left - 332 : // 320 width + 12 gap
