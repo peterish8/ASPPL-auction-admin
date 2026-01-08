@@ -182,10 +182,11 @@ export function Sidebar() {
                 <DropdownMenuContent 
                   side="top" 
                   align="center" 
-                  className="w-56 bg-zinc-900 border-zinc-800 mb-2"
+                  sideOffset={32}
+                  className="w-56 bg-zinc-900 border-zinc-800"
                 >
                   <DropdownMenuItem 
-                    className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer p-3"
+                    className="bg-red-600 text-white focus:bg-red-700 focus:text-white cursor-pointer p-3 m-1 rounded-md justify-center font-medium"
                     onClick={() => setShowSignOutDialog(true)}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
