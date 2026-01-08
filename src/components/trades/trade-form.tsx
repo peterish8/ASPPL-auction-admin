@@ -54,6 +54,8 @@ export function TradeForm({ trade, open, onOpenChange, onSuccess }: TradeFormPro
           .neq('id', trade?.id || '')
       }
 
+      let activeTradeId = trade?.id
+
       if (trade) {
         // Update existing trade
         const { error } = await supabase
@@ -65,12 +67,30 @@ export function TradeForm({ trade, open, onOpenChange, onSuccess }: TradeFormPro
         toast.success('Trade updated successfully')
       } else {
         // Create new trade
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('trades')
           .insert(formData)
+          .select()
+          .single()
 
         if (error) throw error
+        activeTradeId = data.id
         toast.success('Trade created successfully')
+      }
+
+      // If active, sync pooling schedule to this trade
+      if (formData.is_active && activeTradeId) {
+        const { error: syncError } = await supabase
+          .from('pooling_schedule')
+          .update({ trade_id: activeTradeId })
+          .not('id', 'is', null) // Apply to all rows
+        
+        if (syncError) {
+          console.error('Failed to sync pooling schedule:', syncError)
+          toast.error('Trade saved but failed to sync pooling schedule')
+        } else {
+          toast.success('Pooling schedule synced to new trade')
+        }
       }
 
       onSuccess()
