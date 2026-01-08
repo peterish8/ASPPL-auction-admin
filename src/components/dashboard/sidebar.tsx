@@ -15,6 +15,12 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   LayoutDashboard,
   FileText,
   MapPin,
@@ -45,6 +51,7 @@ export function Sidebar() {
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false)
   
   // Safe tour context usage
   let isTourActive = false
@@ -161,38 +168,58 @@ export function Sidebar() {
               Sign Out
             </Button>
           ) : (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800"
-                >
-                  <LogOut className="h-5 w-5 mr-3" />
-                  Sign Out
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Sign out?</DialogTitle>
-                  <DialogDescription className="text-zinc-400">
-                    Are you sure you want to sign out of the admin panel?
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex justify-end gap-3 mt-4">
-                  <DialogClose asChild>
-                    <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 text-white">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button 
-                    onClick={handleLogout} 
-                    className="bg-red-600 hover:bg-red-700 text-white border-0"
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800 data-[state=open]:bg-zinc-800"
                   >
+                    <LogOut className="h-5 w-5 mr-3" />
                     Sign Out
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  side="top" 
+                  align="center" 
+                  className="w-56 bg-zinc-900 border-zinc-800 mb-2"
+                >
+                  <DropdownMenuItem 
+                    className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer p-3"
+                    onClick={() => setShowSignOutDialog(true)}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Confirm Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Dialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+                <DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Sign out?</DialogTitle>
+                    <DialogDescription className="text-zinc-400">
+                      Are you sure you want to sign out of the admin panel?
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-3 mt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowSignOutDialog(false)}
+                      className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleLogout} 
+                      className="bg-red-600 hover:bg-red-700 text-white border-0"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
           
           <div className="mt-6 text-center">
